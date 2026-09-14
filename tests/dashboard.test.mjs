@@ -13,7 +13,7 @@ test('builds dashboard summary from the current pantry and grocery list', () => 
   assert.equal(data.expiringSoon, 2)
   assert.equal(data.expired, 0)
   assert.equal(data.groceryCount, 2)
-  assert.deepEqual(data.priorityItems.map((item) => item.name), ['Milk', 'Chicken'])
+  assert.deepEqual(data.priorityItems.map((item) => item.name), ['Milk', 'Chicken', 'Rice'])
 })
 
 test('creates a pantry-based Did You Know insight using the most urgent item', () => {
