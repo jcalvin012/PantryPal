@@ -1,11 +1,20 @@
 import assert from 'node:assert/strict'
-import { buildSmartStorageDefaults, estimateExpiry, getStorageRecommendation, inferFoodCondition } from '../src/logic/storage-intelligence.mjs'
+import { CONDITION_OPTIONS, buildSmartStorageDefaults, estimateExpiry, getStorageRecommendation, inferFoodCondition } from '../src/logic/storage-intelligence.mjs'
 
 const today = '2026-09-15'
 
-assert.equal(inferFoodCondition('frozen'), 'Frozen')
-assert.equal(inferFoodCondition('cooked'), 'Cooked')
-assert.equal(inferFoodCondition('unknown'), 'Fresh')
+assert.deepEqual(CONDITION_OPTIONS, [
+  'Fresh',
+  'Frozen',
+  'Cooked',
+  'Canned',
+  'Packaged',
+  'Dry / Shelf-Stable',
+  'Opened',
+  'Other',
+])
+
+for (const condition of CONDITION_OPTIONS) assert.equal(inferFoodCondition(condition), condition)
 
 const freshChicken = getStorageRecommendation({ name: 'Chicken breast', condition: 'Fresh' })
 assert.equal(freshChicken.location, 'Fridge')
@@ -31,8 +40,17 @@ assert.equal(frozenGroundBeef.expiryDate, '2027-01-15')
 const cookedChicken = estimateExpiry({ name: 'Cooked chicken', condition: 'Cooked', location: 'Fridge', purchaseDate: today, today })
 assert.equal(cookedChicken.expiryDate, '2026-09-19')
 
-const dryRice = buildSmartStorageDefaults({ name: 'Rice', condition: 'Fresh', purchaseDate: today, today })
-assert.equal(dryRice.location, 'Pantry')
-assert.equal(dryRice.expiryDate, null)
+const cannedTuna = buildSmartStorageDefaults({ name: 'Canned Tuna', condition: 'Canned', purchaseDate: today, today })
+assert.equal(cannedTuna.location, 'Pantry')
+assert.equal(cannedTuna.expiryDate, null)
+assert.equal(cannedTuna.expiryEstimated, false)
 
-console.log('storage intelligence tests: 12 passed')
+const dryNoodles = buildSmartStorageDefaults({ name: 'Instant Noodles', condition: 'Dry / Shelf-Stable', purchaseDate: today, today })
+assert.equal(dryNoodles.location, 'Pantry')
+assert.equal(dryNoodles.expiryDate, null)
+
+const openedMilk = buildSmartStorageDefaults({ name: 'Milk', condition: 'Opened', purchaseDate: today, today })
+assert.equal(openedMilk.location, 'Fridge')
+assert.equal(openedMilk.expiryDate, null)
+
+console.log('storage intelligence tests: expanded condition coverage passed')
