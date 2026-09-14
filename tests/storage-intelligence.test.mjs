@@ -35,4 +35,4 @@ const dryRice = buildSmartStorageDefaults({ name: 'Rice', condition: 'Fresh', pu
 assert.equal(dryRice.location, 'Pantry')
 assert.equal(dryRice.expiryDate, null)
 
-console.log('storage intelligence tests: 11 passed')
+console.log('storage intelligence tests: 12 passed')
