@@ -15,26 +15,32 @@ export function rankMeals(pantryItems, recipes, today = new Date().toISOString()
   }).sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
 }
 
-export function buildGrocerySuggestions(pantryItems, recipes) {
-  const available = new Set(pantryItems.filter((item) => Number(item.quantity) > 0 && !item.is_consumed).map((item) => normalize(item.name)))
+export function buildGrocerySuggestions(pantryItems, recipes, settings = {}) {
+  const householdSize = Math.max(1, Number(settings?.householdSize) || 1)
   const counts = new Map()
   for (const recipe of recipes) {
+    const servings = Math.max(1, Number(recipe.servings) || 1)
+    const scale = householdSize / servings
     for (const ingredient of recipe.ingredients || []) {
+      const matches = pantryItems.filter((item) => normalize(item.name) === normalize(ingredient.ingredient_name) && Number(item.quantity) > 0 && !item.is_consumed)
+      const onHand = matches.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)
+      const needed = Number(ingredient.quantity) > 0 ? Number(ingredient.quantity) * scale : null
+      if (needed != null && onHand >= needed) continue
       const key = normalize(ingredient.ingredient_name)
-      if (!available.has(key)) {
-        const entry = counts.get(key) || { frequency: 0, units: new Map() }
-        entry.frequency += 1
-        const unit = String(ingredient.unit || '').trim()
-        if (unit) entry.units.set(unit, (entry.units.get(unit) || 0) + 1)
-        counts.set(key, entry)
-      }
+      const entry = counts.get(key) || { frequency: 0, units: new Map(), shortage: 0, unit: ingredient.unit || 'pcs' }
+      entry.frequency += 1
+      const unit = String(ingredient.unit || '').trim()
+      if (unit) entry.units.set(unit, (entry.units.get(unit) || 0) + 1)
+      if (needed != null) entry.shortage += Math.max(0, needed - onHand)
+      counts.set(key, entry)
     }
   }
   return [...counts.entries()].sort((a, b) => b[1].frequency - a[1].frequency || a[0].localeCompare(b[0])).map(([item_name, entry]) => {
-    const unit = [...entry.units.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || 'pcs'
+    const unit = [...entry.units.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || entry.unit || 'pcs'
+    const quantity = entry.shortage > 0 ? Math.round(entry.shortage * 100) / 100 : 1
     return {
       item_name,
-      quantity: 1,
+      quantity,
       unit,
       reason: `Needed for ${entry.frequency} meal${entry.frequency === 1 ? '' : 's'}`,
       priority: Math.min(100, 40 + entry.frequency * 15),
