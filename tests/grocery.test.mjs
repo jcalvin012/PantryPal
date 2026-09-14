@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { nextGroceryQuantity, groceryUnit, groceryUnitOptions } from '../src/logic/grocery.mjs'
+import { nextGroceryQuantity, parseGroceryQuantity, groceryUnit, groceryUnitOptions } from '../src/logic/grocery.mjs'
 
 test('increases grocery quantity by one using the existing unit', () => {
   assert.equal(nextGroceryQuantity({ quantity: 1, unit: 'pcs' }, 1), 2)
@@ -10,6 +10,15 @@ test('increases grocery quantity by one using the existing unit', () => {
 test('decreases grocery quantity without going below zero', () => {
   assert.equal(nextGroceryQuantity({ quantity: 3, unit: 'pcs' }, -1), 2)
   assert.equal(nextGroceryQuantity({ quantity: 1, unit: 'kg' }, -1), 0)
+})
+
+test('parses editable grocery quantities and rejects invalid values', () => {
+  assert.equal(parseGroceryQuantity('600'), 600)
+  assert.equal(parseGroceryQuantity('0.5'), 0.5)
+  assert.equal(parseGroceryQuantity(2.5), 2.5)
+  assert.equal(parseGroceryQuantity(''), 0)
+  assert.equal(parseGroceryQuantity('-1'), null)
+  assert.equal(parseGroceryQuantity('abc'), null)
 })
 
 test('uses the stored unit and falls back to pcs', () => {
