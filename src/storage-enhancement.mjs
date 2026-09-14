@@ -11,7 +11,7 @@ function setSelect(form, name, value) {
   if (option) input.value = value
 }
 
-function applySuggestions(form, { forceLocation = false, forceExpiry = false } = {}) {
+function applySuggestions(form, { forceLocation = false } = {}) {
   const name = field(form, 'name')?.value.trim()
   if (!name) return
 
@@ -28,7 +28,7 @@ function applySuggestions(form, { forceLocation = false, forceExpiry = false } =
     setSelect(form, 'location', defaults.location)
   }
 
-  if ((forceExpiry || !expiryLocked) && expiryInput && !expiryInput.value && defaults.expiryDate) {
+  if (!expiryLocked && expiryInput && !expiryInput.value && defaults.expiryDate) {
     expiryInput.value = defaults.expiryDate
     expiryInput.dataset.autoEstimated = 'true'
   }
@@ -82,14 +82,5 @@ observer.observe(document.body, { childList: true, subtree: true })
 document.addEventListener('submit', (event) => {
   const form = event.target.closest('#pantry-form')
   if (!form) return
-  const expiry = field(form, 'expiry_date')
-  if (!expiry?.value) applySuggestions(form)
+  if (!field(form, 'expiry_date')?.value) applySuggestions(form)
 }, true)
-
-document.addEventListener('click', (event) => {
-  const close = event.target.closest('[data-close-modal]')
-  if (close) {
-    const form = getForm()
-    form?.remove()
-  }
-})
