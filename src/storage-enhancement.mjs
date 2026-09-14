@@ -23,7 +23,15 @@ function applySuggestions(form, { forceLocation = false, forceExpiry = false } =
 
   const locationLocked = form.dataset.locationLocked === 'true'
   const expiryLocked = form.dataset.expiryLocked === 'true'
-  const autoEstimated = expiryInput?.dataset.autoEstimated === 'true'
+  let autoEstimated = expiryInput?.dataset.autoEstimated === 'true'
+
+  // When editing an existing item, an automatically generated expiry is already
+  // persisted in the database. Re-identify it as auto-generated if it still
+  // matches the current storage rule so condition/location changes can recalculate it.
+  if (!expiryLocked && expiryInput?.value && !autoEstimated && defaults.expiryDate === expiryInput.value) {
+    expiryInput.dataset.autoEstimated = 'true'
+    autoEstimated = true
+  }
 
   if ((forceLocation || !locationLocked) && defaults.location && (currentLocation === 'Pantry' || forceLocation)) {
     setSelect(form, 'location', defaults.location)
