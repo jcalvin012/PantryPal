@@ -16,7 +16,7 @@ test('parses editable grocery quantities and rejects invalid values', () => {
   assert.equal(parseGroceryQuantity('600'), 600)
   assert.equal(parseGroceryQuantity('0.5'), 0.5)
   assert.equal(parseGroceryQuantity(2.5), 2.5)
-  assert.equal(parseGroceryQuantity(''), 0)
+  assert.equal(parseGroceryQuantity(''), null)
   assert.equal(parseGroceryQuantity('-1'), null)
   assert.equal(parseGroceryQuantity('abc'), null)
 })
