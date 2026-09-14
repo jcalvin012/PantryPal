@@ -37,6 +37,28 @@ async function submitManualGrocery(event) {
   }
 }
 
+async function addRecommendedGrocery(event) {
+  const button = event.target.closest('[data-grocery-add][data-quantity]')
+  if (!button) return
+  event.preventDefault()
+  event.stopImmediatePropagation()
+  const session = getAuthSession()
+  if (!session?.access_token) return
+  const name = button.dataset.name
+  const quantity = Number(button.dataset.quantity)
+  const unit = button.dataset.unit || 'pcs'
+  try {
+    await restRequest('grocery_items', { method: 'POST', accessToken: session.access_token, body: {
+      item_name: name, category: 'Other', quantity, unit,
+      reason: button.dataset.reason || 'Meal recommendation', priority: Number(button.dataset.priority) || 50,
+      source: button.dataset.source || 'recipe'
+    } })
+    button.disabled = true
+    button.textContent = 'Added ✓'
+    document.dispatchEvent(new CustomEvent('pantrypal:grocery-refresh'))
+  } catch (error) { alert(error.message) }
+}
+
 async function alignRecommendationQuantities(root) {
   if (root.dataset.groceryRecommendationAligned === 'true') return
   const list = [...root.querySelectorAll('.section')].find((section) => section.querySelector('h2')?.textContent.trim() === 'Recommended for You')
@@ -78,6 +100,7 @@ async function alignRecommendationQuantities(root) {
 }
 
 document.addEventListener('submit', submitManualGrocery, true)
+document.addEventListener('click', addRecommendedGrocery, true)
 const observer = new MutationObserver(() => {
   navigateBackToGrocery()
   const root = [...document.querySelectorAll('.hero')].find((node) => node.querySelector('h1')?.textContent.trim() === 'Grocery')?.closest('.page')
