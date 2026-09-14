@@ -1,5 +1,6 @@
 import { getAuthSession, restRequest } from './supabase.mjs'
 import { buildGrocerySuggestions } from './logic/recommendations.mjs'
+import { inferCategory } from './logic/category.mjs'
 
 const settingsKey = () => `pantrypal-settings:${getAuthSession()?.user?.id || getAuthSession()?.user?.email || 'guest'}`
 const loadSettings = () => { try { return JSON.parse(localStorage.getItem(settingsKey()) || '{}') } catch { return {} } }
@@ -12,6 +13,24 @@ function navigateBackToGrocery() {
   button.click()
 }
 
+async function mergeManualGroceryItem({ name, quantity, unit, category, reason, priority, source, accessToken }) {
+  const query = `?select=*&is_completed=eq.false&item_name=eq.${encodeURIComponent(name)}&unit=eq.${encodeURIComponent(unit)}&order=created_at.asc`
+  const existing = await restRequest('grocery_items', { accessToken, query })
+  const matching = (existing || []).filter((item) => String(item.item_name || '').trim().toLowerCase().replace(/\s+/g, ' ') === name.toLowerCase().replace(/\s+/g, ' '))
+  if (!matching.length) {
+    await restRequest('grocery_items', { method: 'POST', accessToken, body: { item_name: name, category, quantity, unit, reason, priority, source } })
+    return
+  }
+
+  const primary = matching[0]
+  const combinedQuantity = Math.round((Number(primary.quantity) + quantity + matching.slice(1).reduce((sum, item) => sum + Number(item.quantity || 0), 0)) * 100) / 100
+  await restRequest('grocery_items', { method: 'PATCH', accessToken, query: `?id=eq.${encodeURIComponent(primary.id)}`, body: { quantity: combinedQuantity, category, reason: reason || primary.reason, priority: Math.max(Number(primary.priority) || 0, priority), source: primary.source || source } })
+
+  for (const duplicate of matching.slice(1)) {
+    await restRequest('grocery_items', { method: 'DELETE', accessToken, query: `?id=eq.${encodeURIComponent(duplicate.id)}` })
+  }
+}
+
 async function submitManualGrocery(event) {
   const form = event.target.closest('[data-manual-grocery-form]')
   if (!form) return
@@ -19,16 +38,16 @@ async function submitManualGrocery(event) {
   event.stopImmediatePropagation()
   const data = Object.fromEntries(new FormData(form).entries())
   const quantity = Number(data.quantity)
-  if (!data.item_name?.trim() || !Number.isFinite(quantity) || quantity <= 0) return
+  const name = data.item_name?.trim()
+  if (!name || !Number.isFinite(quantity) || quantity <= 0) return
   const session = getAuthSession()
   if (!session?.access_token) return
   const button = form.querySelector('button[type="submit"]')
   if (button) { button.disabled = true; button.textContent = 'Adding…' }
   try {
-    await restRequest('grocery_items', { method: 'POST', accessToken: session.access_token, body: {
-      item_name: data.item_name.trim(), category: 'Other', quantity,
-      unit: data.unit || 'pcs', reason: data.note?.trim() || 'Manually added', priority: 50, source: 'manual'
-    } })
+    const unit = data.unit || 'pcs'
+    const category = data.category || inferCategory(name, 'Other')
+    await mergeManualGroceryItem({ name, quantity, unit, category, reason: data.note?.trim() || 'Manually added', priority: 50, source: 'manual', accessToken: session.access_token })
     sessionStorage.setItem('pantrypal-return-to-grocery', 'true')
     location.reload()
   } catch (error) {
@@ -53,7 +72,8 @@ async function addRecommendedGrocery(event) {
       reason: button.dataset.reason || 'Meal recommendation', priority: Number(button.dataset.priority) || 50,
       source: button.dataset.source || 'recipe'
     } })
-    sessionStorage.setItem('pantrypal-return-to-grocery', 'true')
+    button.disabled = true
+    button.textContent = 'Added ✓'
     document.dispatchEvent(new CustomEvent('pantrypal:grocery-refresh'))
   } catch (error) { alert(error.message) }
 }
