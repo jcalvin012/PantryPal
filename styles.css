@@ -74,6 +74,16 @@ h3 { font-size:16px; }
 .modal-head { display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px; }
 .form-grid { display:grid;grid-template-columns:1fr 1fr;gap:12px; }
 .form-grid .full { grid-column:1/-1; }
+/* Keep the Add Food layout stable even when storage fields are inserted dynamically. */
+.form-grid .field:has([name="name"]) { order:1; }
+.form-grid .field:has([name="condition"]) { order:2; }
+.form-grid .field:has([name="quantity"]) { order:3; }
+.form-grid .field:has([name="unit"]) { order:4; }
+.form-grid .field:has([name="purchase_date"]) { order:5; }
+.form-grid .field:has([name="expiry_date"]) { order:6; }
+.form-grid .field:has([name="category"]) { order:7; }
+.form-grid .field:has([name="location"]) { order:8; }
+.form-grid .field:has([name="notes"]) { order:9; }
 .nav { position:fixed;bottom:0;left:0;right:0;z-index:20;background:rgba(255,255,255,.95);backdrop-filter:blur(16px);border-top:1px solid var(--line);padding:8px max(12px,env(safe-area-inset-left)) calc(8px + env(safe-area-inset-bottom)); }
 .nav-inner { width:min(620px,100%);margin:auto;display:grid;grid-template-columns:repeat(5,1fr);gap:4px; }
 .nav button { border:0;background:none;color:var(--muted);padding:7px 4px;border-radius:12px;font-size:11px;font-weight:700; }
@@ -85,6 +95,8 @@ h3 { font-size:16px; }
 .recipe { display:grid;gap:10px; }
 .recipe-ingredients { display:flex;gap:6px;flex-wrap:wrap; }
 .ingredient { background:#f0f3f0;border-radius:999px;padding:5px 8px;font-size:12px;color:#53605a; }
+.ingredient-ok { background:var(--mint);color:var(--accent-strong); }
+.ingredient-missing { background:var(--danger);color:#8b312a; }
 .dashboard-insight { display:flex;align-items:flex-start;gap:14px;background:var(--mint);border:1px solid #d4e6d9;border-radius:22px;padding:18px 20px;margin-bottom:18px; }
 .insight-icon { width:42px;height:42px;flex:0 0 42px;border-radius:14px;background:#fff;display:grid;place-items:center;font-size:21px; }
 .insight-label { font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--accent-strong);margin-bottom:3px; }
@@ -96,6 +108,19 @@ h3 { font-size:16px; }
 .dashboard-card .section-head h2 { margin-bottom:3px; }
 .dashboard-icon { font-size:24px; }
 .dashboard-link { align-self:flex-start;margin-top:auto; }
+.pantry-controls { display:grid;grid-template-columns:minmax(0,1fr) 220px auto;gap:10px;margin:-8px 0 18px; }
+.pantry-controls input,.pantry-controls select { width:100%;border:1px solid var(--line);border-radius:14px;padding:11px 13px;background:#fff;color:var(--ink);outline:none; }
+.pantry-controls input:focus,.pantry-controls select:focus { border-color:var(--accent);box-shadow:0 0 0 3px rgba(47,111,80,.1); }
+.pantry-card[hidden] { display:none; }
+.pantry-settings { margin-top:0; }
+.household-control { display:flex;align-items:center;justify-content:space-between;gap:16px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:16px 0; }
+.quantity-control { display:flex;align-items:center;gap:8px; }
+.quantity-control input { width:64px;text-align:center;border:1px solid var(--line);border-radius:12px;padding:9px;background:#fff; }
+.schedule-grid { display:grid;grid-template-columns:1fr 1fr;gap:16px;padding-top:16px; }
+.schedule-row { display:flex;gap:8px;flex-wrap:wrap;margin-top:9px; }
+.setting-check { display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:7px 10px;background:#fff;font-size:13px; }
+.setting-check input { accent-color:var(--accent); }
+.thaw-box { margin-top:14px;padding:14px 16px;border-radius:16px;background:#eef5ef;border:1px solid #d5e6d8;color:var(--accent-strong);display:grid;gap:6px; }
 @media (max-width: 760px) {
   .container { width:min(100% - 24px, 1120px); }
   .grid.stats,.grid.cards,.pantry-grid,.dashboard-bottom-grid { grid-template-columns:1fr; }
@@ -103,4 +128,7 @@ h3 { font-size:16px; }
   .form-grid { grid-template-columns:1fr; }
   .form-grid .full { grid-column:auto; }
   .card { padding:17px; }
+  .pantry-controls { grid-template-columns:1fr; }
+  .schedule-grid { grid-template-columns:1fr; }
+  .household-control { align-items:flex-start;flex-direction:column; }
 }
