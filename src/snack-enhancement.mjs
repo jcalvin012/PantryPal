@@ -1,7 +1,12 @@
 import { getExpiryStatus } from './logic/expiry.mjs'
 
 const today = () => new Date().toISOString().slice(0, 10)
-const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]))
+const toDateValue = (value) => {
+  if (!value || value === 'No expiry') return null
+  if (/^\d{4}-\d{2}-\d{2}/.test(value)) return value.slice(0, 10)
+  const parsed = new Date(value)
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString().slice(0, 10)
+}
 
 function enhanceSnackModal() {
   const modal = document.querySelector('[data-snack-modal]')
@@ -10,7 +15,8 @@ function enhanceSnackModal() {
   for (const card of document.querySelectorAll('.pantry-card')) {
     const name = card.querySelector('.item-name')?.textContent.trim()
     const text = [...card.querySelectorAll('.item-meta')].map((node) => node.textContent.trim()).find((value) => value.startsWith('Expiry:'))
-    if (name && text) expiryByName.set(name.toLowerCase(), text.replace(/^Expiry:\s*/, ''))
+    const expiry = toDateValue(text?.replace(/^Expiry:\s*/, ''))
+    if (name) expiryByName.set(name.toLowerCase(), expiry)
   }
   const list = modal.querySelector('.item-list')
   if (!list) return
@@ -25,7 +31,7 @@ function enhanceSnackModal() {
       row.classList.add('snack-expired')
       const badge = row.querySelector('.badge')
       if (badge) { badge.className = 'badge expired'; badge.textContent = 'Expired' }
-      row.insertAdjacentHTML('beforeend', `<div class="snack-warning">⚠️ This item is expired. Consider replacing it instead of using it.</div>`)
+      row.insertAdjacentHTML('beforeend', '<div class="snack-warning">⚠️ This item is expired. Consider replacing it instead of using it.</div>')
       expired.push(row)
     } else normal.push(row)
   }
