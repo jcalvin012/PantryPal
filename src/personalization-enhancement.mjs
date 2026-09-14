@@ -1,8 +1,9 @@
 import { getAuthSession, restRequest } from './supabase.mjs'
 import { calculateRecipeRequirements, buildMealPlan, formatQuantity } from './logic/meal-planning.mjs'
 import { filterPantryItems, buildQuickSnackSuggestions } from './logic/pantry-view.mjs'
+import { CATEGORY_OPTIONS, inferCategory } from './logic/category.mjs'
 
-const CATEGORIES = ['All', 'Meat', 'Seafood', 'Dairy', 'Fruits', 'Vegetables', 'Grains', 'Canned', 'Condiments', 'Beverages', 'Snacks', 'Other']
+const CATEGORIES = ['All', ...CATEGORY_OPTIONS]
 const BUILT_IN = [
   { name: 'Chicken Rice Bowl', servings: 2, ingredients: [{ ingredient_name: 'Chicken', quantity: 250, unit: 'g' }, { ingredient_name: 'Rice', quantity: 200, unit: 'g' }, { ingredient_name: 'Egg', quantity: 2, unit: 'pcs' }] },
   { name: 'Egg Fried Rice', servings: 2, ingredients: [{ ingredient_name: 'Rice', quantity: 400, unit: 'g' }, { ingredient_name: 'Egg', quantity: 2, unit: 'pcs' }, { ingredient_name: 'Garlic', quantity: 15, unit: 'g' }] },
@@ -10,7 +11,7 @@ const BUILT_IN = [
   { name: 'Vegetable Omelette', servings: 1, ingredients: [{ ingredient_name: 'Egg', quantity: 2, unit: 'pcs' }, { ingredient_name: 'Tomato', quantity: 1, unit: 'pc' }, { ingredient_name: 'Onion', quantity: 30, unit: 'g' }] },
 ]
 
-const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]))
+const esc = (value) => String(value ?? '').replace(/[&<>\"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '\"':'&quot;', "'":'&#39;' }[c]))
 const today = () => new Date().toISOString().slice(0, 10)
 const settingsKey = () => `pantrypal-settings:${getAuthSession()?.user?.id || getAuthSession()?.user?.email || 'guest'}`
 const defaultSettings = () => ({ householdSize: 1, schedule: { today: { breakfast: true, lunch: true, dinner: true }, tomorrow: { breakfast: true, lunch: true, dinner: true } } })
@@ -23,6 +24,22 @@ function readSettingsForm() {
   const schedule = { today: {}, tomorrow: {} }
   for (const day of ['today', 'tomorrow']) for (const meal of ['breakfast', 'lunch', 'dinner']) schedule[day][meal] = Boolean(document.querySelector(`[data-meal-slot="${day}-${meal}"]`)?.checked)
   return { householdSize, schedule }
+}
+
+function enhanceCategorySelects() {
+  for (const select of document.querySelectorAll('select[name="category"]')) {
+    const current = select.value || 'Other'
+    const values = [...new Set(['Other', ...CATEGORY_OPTIONS])]
+    select.innerHTML = values.map((category) => `<option value="${esc(category)}" ${category === current ? 'selected' : ''}>${esc(category)}</option>`).join('')
+    if (!select.dataset.categoryEnhanced) {
+      select.dataset.categoryEnhanced = 'true'
+      const form = select.closest('form')
+      const name = form?.querySelector('[name="name"]')
+      name?.addEventListener('input', () => {
+        if (select.value === 'Other') select.value = inferCategory(name.value, 'Other')
+      })
+    }
+  }
 }
 
 function settingsPanel() {
@@ -74,7 +91,9 @@ function enhancePantry() {
 
 function showSnackModal(snacks) {
   document.querySelector('[data-snack-modal]')?.remove()
-  const body = snacks.length ? snacks.map((item) => `<div class="item"><div><div class="item-name">${esc(item.name)}</div><div class="item-meta">${esc(item.quantity)} ${esc(item.unit)} available</div></div><span class="badge safe">Quick snack</span></div>`).join('') : '<div class="empty">Add food to the Snacks category to get quick snack ideas.</div>'
+  const body = snacks.length ? snacks.map((item) => item.expired
+    ? `<div class="item snack-expired"><div><div class="item-name">${esc(item.name)}</div><div class="item-meta">${esc(item.quantity)} ${esc(item.unit)} available</div><div class="snack-warning">⚠️ This item is expired. Consider replacing it instead of using it.</div></div><span class="badge expired">Expired</span></div>`
+    : `<div class="item"><div><div class="item-name">${esc(item.name)}</div><div class="item-meta">${esc(item.quantity)} ${esc(item.unit)} available</div></div><span class="badge safe">Quick snack</span></div>`).join('') : '<div class="empty">Add food to the Snacks category to get quick snack ideas.</div>'
   document.body.insertAdjacentHTML('beforeend', `<div class="modal-backdrop" data-snack-modal><div class="modal"><div class="modal-head"><div><h2>Quick Snack</h2><p class="muted">Use a snack item you already have.</p></div><button class="btn ghost small" data-snack-close>Close</button></div><div class="item-list">${body}</div></div></div>`)
   document.querySelector('[data-snack-close]').onclick = () => document.querySelector('[data-snack-modal]')?.remove()
   document.querySelector('[data-snack-modal]').addEventListener('click', (e) => { if (e.target.matches('[data-snack-modal]')) e.currentTarget.remove() })
@@ -137,6 +156,7 @@ async function enhanceMeals() {
 let lastScreen = ''
 let refreshTimer
 function enhance() {
+  enhanceCategorySelects()
   const heading = document.querySelector('.hero h1')?.textContent.trim() || ''
   const screen = heading || document.querySelector('.header')?.textContent || ''
   if (screen === 'Settings') enhanceSettings()
