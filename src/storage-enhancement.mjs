@@ -1,4 +1,4 @@
-import { buildSmartStorageDefaults, inferFoodCondition } from './logic/storage-intelligence.mjs'
+import { CONDITION_OPTIONS, buildSmartStorageDefaults, inferFoodCondition } from './logic/storage-intelligence.mjs'
 
 const today = () => new Date().toISOString().slice(0, 10)
 
@@ -25,9 +25,6 @@ function applySuggestions(form, { forceLocation = false, forceExpiry = false } =
   const expiryLocked = form.dataset.expiryLocked === 'true'
   let autoEstimated = expiryInput?.dataset.autoEstimated === 'true'
 
-  // When editing an existing item, an automatically generated expiry is already
-  // persisted in the database. Re-identify it as auto-generated if it still
-  // matches the current storage rule so condition/location changes can recalculate it.
   if (!expiryLocked && expiryInput?.value && !autoEstimated && defaults.expiryDate === expiryInput.value) {
     expiryInput.dataset.autoEstimated = 'true'
     autoEstimated = true
@@ -57,13 +54,28 @@ function enhanceForm(form) {
 
   const name = field(form, 'name')
   const category = field(form, 'category')
+  const grid = form.querySelector('.form-grid')
+  const nameField = name?.closest('.field')
   const conditionField = document.createElement('div')
   conditionField.className = 'field'
-  conditionField.innerHTML = `<label for="pantry-condition">Condition</label><select id="pantry-condition" name="condition"><option value="Fresh">Fresh</option><option value="Frozen">Frozen</option><option value="Cooked">Cooked</option><option value="Packaged">Packaged</option></select>`
+  conditionField.innerHTML = `<label for="pantry-condition">Condition</label><select id="pantry-condition" name="condition">${CONDITION_OPTIONS.map((option) => `<option value="${option}">${option}</option>`).join('')}</select>`
 
-  const grid = form.querySelector('.form-grid')
-  const categoryField = category?.closest('.field')
-  if (grid && categoryField) grid.insertBefore(conditionField, categoryField.nextSibling)
+  // Keep the Add Food form in the intended two-column order:
+  // Name | Condition
+  // Quantity | Unit
+  // Purchase Date | Expiry Date
+  // Category | Location
+  // Notes
+  if (grid && nameField) grid.insertAfter?.(conditionField, nameField)
+  if (grid && nameField && !conditionField.parentElement) {
+    nameField.insertAdjacentElement('afterend', conditionField)
+  }
+
+  // If the browser does not support insertAfter on the grid, the adjacent-element
+  // insertion above still places Condition directly after Name.
+  if (grid && conditionField.parentElement !== grid && nameField) {
+    grid.insertBefore(conditionField, nameField.nextElementSibling)
+  }
 
   const currentLocation = field(form, 'location')?.value || 'Pantry'
   field(form, 'condition').value = inferFoodCondition(currentLocation === 'Freezer' ? 'Frozen' : 'Fresh')
