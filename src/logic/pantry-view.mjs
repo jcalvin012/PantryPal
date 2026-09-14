@@ -13,9 +13,15 @@ export function filterPantryItems(items, { search = '', category = 'All' } = {})
 
 export function buildQuickSnackSuggestions(items, today = new Date().toISOString().slice(0, 10)) {
   const snacks = items.filter((item) => normalize(item.category) === 'snacks' && Number(item.quantity) > 0)
-  return snacks.sort((a, b) => {
-    const aStatus = getExpiryStatus(a.expiry_date, today)
-    const bStatus = getExpiryStatus(b.expiry_date, today)
-    return (aStatus.daysLeft ?? 99999) - (bStatus.daysLeft ?? 99999)
-  }).slice(0, 5).map((item) => ({ name: item.name, quantity: item.quantity, unit: item.unit, expiryDate: item.expiry_date }))
+    .map((item) => {
+      const status = getExpiryStatus(item.expiry_date, today)
+      return { name: item.name, quantity: item.quantity, unit: item.unit, expiryDate: item.expiry_date, expired: status.tone === 'expired', expiryLabel: status.label }
+    })
+    .sort((a, b) => {
+      if (a.expired !== b.expired) return a.expired ? 1 : -1
+      return getExpiryStatus(a.expiryDate, today).daysLeft - getExpiryStatus(b.expiryDate, today).daysLeft
+    })
+  const usable = snacks.filter((item) => !item.expired)
+  const expired = snacks.filter((item) => item.expired)
+  return [...usable.slice(0, 5), ...expired.slice(0, Math.max(0, 5 - Math.min(usable.length, 5)))]
 }
