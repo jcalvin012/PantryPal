@@ -1,3 +1,5 @@
+export const CATEGORY_OPTIONS = ['Meat', 'Seafood', 'Dairy', 'Fruits', 'Vegetables', 'Grains', 'Canned', 'Condiments', 'Beverages', 'Snacks', 'Other']
+
 const CATEGORY_RULES = [
   ['Meat', ['chicken', 'beef', 'pork', 'lamb', 'goat', 'steak', 'ground meat', 'ground beef', 'ground pork', 'ham', 'bacon', 'sausage', 'hotdog', 'hot dog', 'turkey', 'duck']],
   ['Seafood', ['fish', 'salmon', 'tuna', 'sardine', 'sardines', 'shrimp', 'prawn', 'crab', 'squid', 'mackerel', 'bangus', 'tilapia']],
@@ -8,7 +10,7 @@ const CATEGORY_RULES = [
   ['Canned', ['canned', 'can of', 'instant noodles', 'crackers', 'chips', 'biscuits', 'cookies', 'canned goods']],
   ['Condiments', ['ketchup', 'mayonnaise', 'mayo', 'mustard', 'soy sauce', 'vinegar', 'sauce', 'salsa', 'hot sauce']],
   ['Beverages', ['water', 'juice', 'coffee', 'tea', 'soda', 'soft drink', 'drink', 'beer']],
-  ['Snacks', ['snack', 'chocolate', 'candy', 'popcorn', 'nuts', 'peanuts']],
+  ['Snacks', ['snack', 'chocolate', 'candy', 'popcorn', 'nuts', 'peanuts', 'chips', 'crackers', 'biscuits', 'cookies']],
 ]
 
 const normalize = (value) => String(value || '').trim().toLowerCase().replace(/\s+/g, ' ')
