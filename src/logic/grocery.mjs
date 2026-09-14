@@ -18,3 +18,25 @@ export function groceryUnitOptions(selected = 'pcs') {
   const value = groceryUnit({ unit: selected })
   return GROCERY_UNITS.includes(value) ? GROCERY_UNITS : [value, ...GROCERY_UNITS]
 }
+
+export function mergeSameGroceryItems(items = []) {
+  const merged = []
+  const index = new Map()
+  for (const item of items) {
+    const name = String(item?.item_name || item?.name || '').trim().toLowerCase().replace(/\s+/g, ' ')
+    const unit = groceryUnit(item)
+    const key = `${name}::${unit}`
+    if (!name) continue
+    const existingIndex = index.get(key)
+    if (existingIndex == null) {
+      merged.push({ ...item, quantity: Number(item.quantity) || 0, unit })
+      index.set(key, merged.length - 1)
+    } else {
+      merged[existingIndex] = {
+        ...merged[existingIndex],
+        quantity: Math.round((Number(merged[existingIndex].quantity || 0) + Number(item.quantity || 0)) * 100) / 100,
+      }
+    }
+  }
+  return merged
+}
