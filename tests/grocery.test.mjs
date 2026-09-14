@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { nextGroceryQuantity, groceryUnit } from '../src/logic/grocery.mjs'
+import { nextGroceryQuantity, groceryUnit, groceryUnitOptions } from '../src/logic/grocery.mjs'
 
 test('increases grocery quantity by one using the existing unit', () => {
   assert.equal(nextGroceryQuantity({ quantity: 1, unit: 'pcs' }, 1), 2)
@@ -16,4 +16,9 @@ test('uses the stored unit and falls back to pcs', () => {
   assert.equal(groceryUnit({ unit: 'kg' }), 'kg')
   assert.equal(groceryUnit({ unit: '' }), 'pcs')
   assert.equal(groceryUnit({}), 'pcs')
+})
+
+test('offers common editable grocery units', () => {
+  assert.deepEqual(groceryUnitOptions('kg'), ['pc', 'pcs', 'kg', 'g', 'L', 'mL', 'bottle', 'pack', 'box', 'can', 'dozen'])
+  assert.equal(groceryUnitOptions('custom')[0], 'custom')
 })
