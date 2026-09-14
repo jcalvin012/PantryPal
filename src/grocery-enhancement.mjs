@@ -1,8 +1,9 @@
 import { getAuthSession, restRequest } from './supabase.mjs'
 import { groupGroceriesForShopping, getGroceryFrequency, inferShoppingSection } from './logic/grocery-planning.mjs'
 import { groceryUnit, groceryUnitOptions, parseGroceryQuantity } from './logic/grocery.mjs'
+import { CATEGORY_OPTIONS, inferCategory } from './logic/category.mjs'
 
-const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]))
+const esc = (value) => String(value ?? '').replace(/[&<>\"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '\"':'&quot;', "'":'&#39;' }[c]))
 const checkedKey = () => `pantrypal-grocery-checked:${getAuthSession()?.user?.id || getAuthSession()?.user?.email || 'guest'}`
 const settingsKey = () => `pantrypal-settings:${getAuthSession()?.user?.id || getAuthSession()?.user?.email || 'guest'}`
 const loadChecked = () => { try { return new Set(JSON.parse(localStorage.getItem(checkedKey()) || '[]').map(String)) } catch { return new Set() } }
@@ -105,7 +106,6 @@ function groupList(root) {
     list.appendChild(section)
   }
   list.dataset.grouped = 'true'
-  // Nested lists are easier to style and keep the original app event delegation intact.
   decorateNestedChecks(root)
 }
 
@@ -126,21 +126,26 @@ function decorateNestedChecks(root) {
 function openManualModal(root) {
   document.querySelector('[data-manual-grocery-modal]')?.remove()
   const units = groceryUnitOptions('pcs').map((unit) => `<option value="${esc(unit)}">${esc(unit)}</option>`).join('')
-  document.body.insertAdjacentHTML('beforeend', `<div class="modal-backdrop" data-manual-grocery-modal><div class="modal"><div class="modal-head"><div><h2>Add grocery item</h2><p class="muted">Add something you want to buy manually.</p></div><button class="btn ghost small" data-manual-close>Close</button></div><form class="stack" data-manual-grocery-form><div class="field"><label>Item name</label><input name="item_name" required placeholder="e.g. Coffee"></div><div class="form-grid"><div class="field"><label>Quantity</label><input name="quantity" type="number" min="0.01" step="0.01" value="1" required></div><div class="field"><label>Unit</label><select name="unit">${units}</select></div></div><div class="field"><label>Note (optional)</label><textarea name="note" rows="3" placeholder="e.g. Buy the large pack"></textarea></div><button class="btn primary" type="submit">Add to grocery list</button></form></div></div>`)
+  const categories = CATEGORY_OPTIONS.map((category) => `<option value="${esc(category)}" ${category === 'Other' ? 'selected' : ''}>${esc(category)}</option>`).join('')
+  document.body.insertAdjacentHTML('beforeend', `<div class="modal-backdrop" data-manual-grocery-modal><div class="modal"><div class="modal-head"><div><h2>Add grocery item</h2><p class="muted">Add something you want to buy manually.</p></div><button class="btn ghost small" data-manual-close>Close</button></div><form class="stack" data-manual-grocery-form><div class="field"><label>Item name</label><input name="item_name" required placeholder="e.g. Coffee"></div><div class="form-grid"><div class="field"><label>Quantity</label><input name="quantity" type="number" min="0.01" step="0.01" value="1" required></div><div class="field"><label>Unit</label><select name="unit">${units}</select></div></div><div class="field"><label>Category</label><select name="category">${categories}</select><div class="item-meta" data-manual-category-hint>Category is automatically suggested from the item name. You can change it.</div></div><div class="field"><label>Note (optional)</label><textarea name="note" rows="3" placeholder="e.g. Buy the large pack"></textarea></div><button class="btn primary" type="submit">Add to grocery list</button></form></div></div>`)
   const modal = document.querySelector('[data-manual-grocery-modal]')
+  const form = modal.querySelector('[data-manual-grocery-form]')
+  const name = form.querySelector('[name="item_name"]')
+  const category = form.querySelector('[name="category"]')
+  name.addEventListener('input', () => { if (category.value === 'Other') category.value = inferCategory(name.value, 'Other') })
   modal.querySelector('[data-manual-close]').onclick = () => modal.remove()
   modal.addEventListener('click', (event) => { if (event.target === modal) modal.remove() })
-  modal.querySelector('[data-manual-grocery-form]').onsubmit = async (event) => {
+  form.onsubmit = async (event) => {
     event.preventDefault()
-    const form = event.currentTarget
     const data = Object.fromEntries(new FormData(form).entries())
     const quantity = parseGroceryQuantity(data.quantity)
     if (quantity === null || quantity <= 0) return
     const session = getAuthSession()
     try {
-      await restRequest('grocery_items', { method: 'POST', accessToken: session.access_token, body: { item_name: data.item_name.trim(), category: 'Other', quantity, unit: groceryUnit({ unit: data.unit }), reason: data.note.trim() || 'Manually added', priority: 50, source: 'manual' } })
+      await restRequest('grocery_items', { method: 'POST', accessToken: session.access_token, body: { item_name: data.item_name.trim(), category: data.category || inferCategory(data.item_name, 'Other'), quantity, unit: groceryUnit({ unit: data.unit }), reason: data.note.trim() || 'Manually added', priority: 50, source: 'manual' } })
       modal.remove()
-      document.dispatchEvent(new CustomEvent('pantrypal:grocery-refresh'))
+      sessionStorage.setItem('pantrypal-return-to-grocery', 'true')
+      location.reload()
     } catch (error) { alert(error.message) }
   }
 }
