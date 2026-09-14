@@ -4,9 +4,9 @@ const CATEGORY_RULES = [
   ['Dairy', ['milk', 'cheese', 'yogurt', 'yoghurt', 'butter', 'cream', 'margarine']],
   ['Fruits', ['apple', 'banana', 'orange', 'mango', 'grape', 'watermelon', 'papaya', 'pineapple', 'avocado', 'lemon', 'lime', 'pear', 'peach', 'strawberry', 'melon']],
   ['Vegetables', ['carrot', 'potato', 'tomato', 'onion', 'garlic', 'lettuce', 'cabbage', 'spinach', 'broccoli', 'cauliflower', 'eggplant', 'aubergine', 'okra', 'pepper', 'bell pepper', 'cucumber', 'squash', 'corn', 'mushroom', 'beans']],
-  ['Grains & Staples', ['rice', 'pasta', 'noodle', 'noodles', 'bread', 'flour', 'oat', 'oats', 'cereal', 'quinoa', 'cornmeal']],
-  ['Canned & Packaged', ['canned', 'can of', 'instant noodles', 'crackers', 'chips', 'biscuits', 'cookies', 'canned goods']],
-  ['Condiments & Sauces', ['ketchup', 'mayonnaise', 'mayo', 'mustard', 'soy sauce', 'vinegar', 'sauce', 'salsa', 'hot sauce']],
+  ['Grains', ['rice', 'pasta', 'noodle', 'noodles', 'bread', 'flour', 'oat', 'oats', 'cereal', 'quinoa', 'cornmeal']],
+  ['Canned', ['canned', 'can of', 'instant noodles', 'crackers', 'chips', 'biscuits', 'cookies', 'canned goods']],
+  ['Condiments', ['ketchup', 'mayonnaise', 'mayo', 'mustard', 'soy sauce', 'vinegar', 'sauce', 'salsa', 'hot sauce']],
   ['Beverages', ['water', 'juice', 'coffee', 'tea', 'soda', 'soft drink', 'drink', 'beer']],
   ['Snacks', ['snack', 'chocolate', 'candy', 'popcorn', 'nuts', 'peanuts']],
 ]
