@@ -53,8 +53,7 @@ async function addRecommendedGrocery(event) {
       reason: button.dataset.reason || 'Meal recommendation', priority: Number(button.dataset.priority) || 50,
       source: button.dataset.source || 'recipe'
     } })
-    button.disabled = true
-    button.textContent = 'Added ✓'
+    sessionStorage.setItem('pantrypal-return-to-grocery', 'true')
     document.dispatchEvent(new CustomEvent('pantrypal:grocery-refresh'))
   } catch (error) { alert(error.message) }
 }
