@@ -5,6 +5,7 @@ export function nextGroceryQuantity(item, delta) {
 }
 
 export function parseGroceryQuantity(value) {
+  if (String(value ?? '').trim() === '') return null
   const quantity = Number(value)
   return Number.isFinite(quantity) && quantity >= 0 ? quantity : null
 }
