@@ -53,29 +53,19 @@ function enhanceForm(form) {
   form.dataset.storageEnhanced = 'true'
 
   const name = field(form, 'name')
-  const category = field(form, 'category')
   const grid = form.querySelector('.form-grid')
   const nameField = name?.closest('.field')
   const conditionField = document.createElement('div')
   conditionField.className = 'field'
   conditionField.innerHTML = `<label for="pantry-condition">Condition</label><select id="pantry-condition" name="condition">${CONDITION_OPTIONS.map((option) => `<option value="${option}">${option}</option>`).join('')}</select>`
 
-  // Keep the Add Food form in the intended two-column order:
+  // Intended Add Food order:
   // Name | Condition
   // Quantity | Unit
   // Purchase Date | Expiry Date
   // Category | Location
   // Notes
-  if (grid && nameField) grid.insertAfter?.(conditionField, nameField)
-  if (grid && nameField && !conditionField.parentElement) {
-    nameField.insertAdjacentElement('afterend', conditionField)
-  }
-
-  // If the browser does not support insertAfter on the grid, the adjacent-element
-  // insertion above still places Condition directly after Name.
-  if (grid && conditionField.parentElement !== grid && nameField) {
-    grid.insertBefore(conditionField, nameField.nextElementSibling)
-  }
+  if (grid && nameField) grid.insertBefore(conditionField, nameField.nextElementSibling)
 
   const currentLocation = field(form, 'location')?.value || 'Pantry'
   field(form, 'condition').value = inferFoodCondition(currentLocation === 'Freezer' ? 'Frozen' : 'Fresh')
