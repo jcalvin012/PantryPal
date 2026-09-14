@@ -21,15 +21,24 @@ export function buildGrocerySuggestions(pantryItems, recipes) {
   for (const recipe of recipes) {
     for (const ingredient of recipe.ingredients || []) {
       const key = normalize(ingredient.ingredient_name)
-      if (!available.has(key)) counts.set(key, (counts.get(key) || 0) + 1)
+      if (!available.has(key)) {
+        const entry = counts.get(key) || { frequency: 0, units: new Map() }
+        entry.frequency += 1
+        const unit = String(ingredient.unit || '').trim()
+        if (unit) entry.units.set(unit, (entry.units.get(unit) || 0) + 1)
+        counts.set(key, entry)
+      }
     }
   }
-  return [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([item_name, frequency]) => ({
-    item_name,
-    quantity: 1,
-    unit: 'pcs',
-    reason: `Needed for ${frequency} meal${frequency === 1 ? '' : 's'}`,
-    priority: Math.min(100, 40 + frequency * 15),
-    source: 'recipe',
-  }))
+  return [...counts.entries()].sort((a, b) => b[1].frequency - a[1].frequency || a[0].localeCompare(b[0])).map(([item_name, entry]) => {
+    const unit = [...entry.units.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || 'pcs'
+    return {
+      item_name,
+      quantity: 1,
+      unit,
+      reason: `Needed for ${entry.frequency} meal${entry.frequency === 1 ? '' : 's'}`,
+      priority: Math.min(100, 40 + entry.frequency * 15),
+      source: 'recipe',
+    }
+  })
 }
