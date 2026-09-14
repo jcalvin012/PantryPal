@@ -11,7 +11,7 @@ function setSelect(form, name, value) {
   if (option) input.value = value
 }
 
-function applySuggestions(form, { forceLocation = false } = {}) {
+function applySuggestions(form, { forceLocation = false, forceExpiry = false } = {}) {
   const name = field(form, 'name')?.value.trim()
   if (!name) return
 
@@ -23,12 +23,13 @@ function applySuggestions(form, { forceLocation = false } = {}) {
 
   const locationLocked = form.dataset.locationLocked === 'true'
   const expiryLocked = form.dataset.expiryLocked === 'true'
+  const autoEstimated = expiryInput?.dataset.autoEstimated === 'true'
 
   if ((forceLocation || !locationLocked) && defaults.location && (currentLocation === 'Pantry' || forceLocation)) {
     setSelect(form, 'location', defaults.location)
   }
 
-  if (!expiryLocked && expiryInput && !expiryInput.value && defaults.expiryDate) {
+  if (!expiryLocked && expiryInput && defaults.expiryDate && (!expiryInput.value || forceExpiry || autoEstimated)) {
     expiryInput.value = defaults.expiryDate
     expiryInput.dataset.autoEstimated = 'true'
   }
@@ -56,19 +57,22 @@ function enhanceForm(form) {
   const categoryField = category?.closest('.field')
   if (grid && categoryField) grid.insertBefore(conditionField, categoryField.nextSibling)
 
-  const itemCondition = form.dataset.itemCondition || 'Fresh'
-  field(form, 'condition').value = inferFoodCondition(itemCondition)
+  const currentLocation = field(form, 'location')?.value || 'Pantry'
+  field(form, 'condition').value = inferFoodCondition(currentLocation === 'Freezer' ? 'Frozen' : 'Fresh')
 
   const hint = document.createElement('div')
   hint.className = 'storage-intelligence-hint full'
   hint.dataset.storageIntelligence = 'true'
   grid?.appendChild(hint)
 
-  field(form, 'location')?.addEventListener('change', () => { form.dataset.locationLocked = 'true' })
+  field(form, 'location')?.addEventListener('change', () => {
+    form.dataset.locationLocked = 'true'
+    applySuggestions(form, { forceExpiry: field(form, 'expiry_date')?.dataset.autoEstimated === 'true' })
+  })
   field(form, 'expiry_date')?.addEventListener('change', () => { form.dataset.expiryLocked = 'true'; field(form, 'expiry_date').dataset.autoEstimated = 'false' })
-  field(form, 'condition')?.addEventListener('change', () => applySuggestions(form, { forceLocation: true }))
-  name?.addEventListener('input', () => applySuggestions(form))
-  field(form, 'purchase_date')?.addEventListener('change', () => applySuggestions(form))
+  field(form, 'condition')?.addEventListener('change', () => applySuggestions(form, { forceLocation: true, forceExpiry: field(form, 'expiry_date')?.dataset.autoEstimated === 'true' }))
+  name?.addEventListener('input', () => applySuggestions(form, { forceExpiry: field(form, 'expiry_date')?.dataset.autoEstimated === 'true' }))
+  field(form, 'purchase_date')?.addEventListener('change', () => applySuggestions(form, { forceExpiry: field(form, 'expiry_date')?.dataset.autoEstimated === 'true' }))
 
   applySuggestions(form)
 }
