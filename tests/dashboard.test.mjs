@@ -13,7 +13,17 @@ test('builds dashboard summary from the current pantry and grocery list', () => 
   assert.equal(data.expiringSoon, 2)
   assert.equal(data.expired, 0)
   assert.equal(data.groceryCount, 2)
-  assert.deepEqual(data.priorityItems.map((item) => item.name), ['Milk', 'Chicken', 'Rice'])
+  assert.deepEqual(data.priorityItems.map((item) => item.name), ['Milk', 'Chicken'])
+})
+
+test('includes a large-quantity item in dashboard priorities', () => {
+  const data = buildDashboardData([
+    { name: 'Rice', quantity: 10, unit: 'kg', expiry_date: '2026-09-30' },
+    { name: 'Pasta', quantity: 1, unit: 'kg', expiry_date: '2026-10-15' },
+  ], [], '2026-09-15')
+
+  assert.equal(data.priorityItems[0].name, 'Rice')
+  assert.equal(data.priorityItems[0].largeQuantity, true)
 })
 
 test('creates a pantry-based Did You Know insight using the most urgent item', () => {
@@ -24,6 +34,15 @@ test('creates a pantry-based Did You Know insight using the most urgent item', (
 
   assert.match(insight, /Chicken/)
   assert.match(insight, /2 days|tomorrow|1 day/)
+})
+
+test('creates a quantity insight when there is no urgent expiry', () => {
+  const insight = getPantryInsight([
+    { name: 'Rice', quantity: 10, unit: 'kg', expiry_date: '2026-09-30' },
+  ], '2026-09-15')
+
+  assert.match(insight, /large quantity/)
+  assert.match(insight, /Rice/)
 })
 
 test('falls back to a useful tip when the pantry is empty', () => {
