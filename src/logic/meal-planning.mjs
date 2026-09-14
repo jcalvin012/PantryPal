@@ -25,9 +25,9 @@ export function buildMealPlan(recipes, pantryItems, settings) {
     ['tomorrow', 'lunch', schedule.tomorrow?.lunch],
     ['tomorrow', 'dinner', schedule.tomorrow?.dinner],
   ]
-  const ranked = recipes.map((recipe) => ({ recipe, score: recipe.score ?? 0 }))
-  return slots.filter(([, , enabled]) => enabled).map(([day, meal]) => {
-    const selected = ranked[0]?.recipe || recipes[0]
+  const ranked = [...recipes].sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+  return slots.filter(([, , enabled]) => enabled).map(([day, meal], index) => {
+    const selected = ranked[index % ranked.length]
     return selected ? { slot: `${day}-${meal}`, day, meal, recipe: calculateRecipeRequirements(selected, pantryItems, householdSize) } : null
   }).filter(Boolean)
 }
@@ -35,5 +35,5 @@ export function buildMealPlan(recipes, pantryItems, settings) {
 export function formatQuantity(value) {
   if (value == null) return ''
   const rounded = Math.round(Number(value) * 100) / 100
-  return Number.isInteger(rounded) ? String(rounded) : String(rounded)
+  return String(rounded)
 }
