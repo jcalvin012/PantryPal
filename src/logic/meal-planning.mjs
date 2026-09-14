@@ -25,7 +25,12 @@ export function buildMealPlan(recipes, pantryItems, settings) {
     ['tomorrow', 'lunch', schedule.tomorrow?.lunch],
     ['tomorrow', 'dinner', schedule.tomorrow?.dinner],
   ]
-  const ranked = [...recipes].sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+  const ranked = [...recipes].map((recipe) => {
+    const ingredients = recipe.ingredients || []
+    const matched = ingredients.filter((ingredient) => pantryItems.some((item) => normalize(item.name) === normalize(ingredient.ingredient_name) && Number(item.quantity) > 0))
+    const score = ingredients.length ? (matched.length / ingredients.length) * 100 : 0
+    return { ...recipe, score }
+  }).sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
   return slots.filter(([, , enabled]) => enabled).map(([day, meal], index) => {
     const selected = ranked[index % ranked.length]
     return selected ? { slot: `${day}-${meal}`, day, meal, recipe: calculateRecipeRequirements(selected, pantryItems, householdSize) } : null
