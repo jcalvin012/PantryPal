@@ -3,6 +3,7 @@ import { getExpiryStatus, sortByExpiryUrgency } from './logic/expiry.mjs'
 import { validatePantryItem } from './logic/pantry.mjs'
 import { buildConsumptionLog } from './logic/consumption.mjs'
 import { buildGrocerySuggestions, rankMeals } from './logic/recommendations.mjs'
+import { groceryUnit, nextGroceryQuantity } from './logic/grocery.mjs'
 
 const app = document.querySelector('#app')
 const toast = document.querySelector('#toast')
@@ -116,8 +117,11 @@ function mealsView() {
 function groceryView() {
   const recipes = state.recipes.length ? state.recipes : builtInRecipes
   const suggestions = buildGrocerySuggestions(state.items, recipes)
-  const merged = [...state.groceries, ...suggestions.filter((s) => !state.groceries.some((g) => g.item_name === s.item_name))]
-  app.innerHTML = layout('grocery', `<div class="hero"><div><p class="muted">Only buy what helps</p><h1>Grocery</h1><p class="muted">Recommendations come from meals that fit your pantry today.</p></div></div>${merged.length ? `<div class="item-list">${merged.map((g) => `<div class="item"><div class="item-main"><div class="item-name">${esc(g.item_name)}</div><div class="item-meta">${esc(g.reason || 'Smart pantry suggestion')} · priority ${g.priority}</div></div><button class="btn primary small" data-grocery="${g.id || ''}" data-name="${esc(g.item_name)}">Add</button></div>`).join('')}</div>` : `<div class="empty">Your pantry covers the current meal suggestions. 🎉</div>`}`)
+  const addedNames = new Set(state.groceries.map((g) => String(g.item_name || '').trim().toLowerCase()))
+  const existing = state.groceries
+  app.innerHTML = layout('grocery', `<div class="hero"><div><p class="muted">Only buy what helps</p><h1>Grocery</h1><p class="muted">Recommendations come from meals that fit your pantry today.</p></div></div>
+  <section class="section"><div class="section-head"><h2>My Grocery List</h2></div>${existing.length ? `<div class="item-list">${existing.map((g) => `<div class="item"><div class="item-main"><div class="item-name">${esc(g.item_name)}</div><div class="item-meta">${esc(groceryUnit(g))} · ${esc(g.reason || 'Added to your grocery list')}</div></div><div class="toolbar"><span class="qty">${esc(g.quantity)}</span> <span class="muted">${esc(groceryUnit(g))}</span><button class="btn ghost small" data-grocery-action="decrement" data-id="${esc(g.id)}" aria-label="Decrease ${esc(g.item_name)}">−</button><button class="btn ghost small" data-grocery-action="increment" data-id="${esc(g.id)}" aria-label="Increase ${esc(g.item_name)}">+</button><button class="btn danger small" data-grocery-action="delete" data-id="${esc(g.id)}">Delete</button></div></div>`).join('')}</div>` : `<div class="empty">Your grocery list is empty. Add something from the recommendations below.</div>`}</section>
+  <section class="section"><div class="section-head"><h2>Recommended for You</h2></div>${suggestions.length ? `<div class="item-list">${suggestions.map((g) => { const added = addedNames.has(String(g.item_name || '').trim().toLowerCase()); return `<div class="item"><div class="item-main"><div class="item-name">${esc(g.item_name)}</div><div class="item-meta">${esc(g.reason || 'Smart pantry suggestion')} · priority ${esc(g.priority)}</div></div>${added ? `<button class="btn ghost small" disabled>Added ✓</button>` : `<button class="btn primary small" data-grocery-add data-name="${esc(g.item_name)}" data-unit="${esc(groceryUnit(g))}" data-reason="${esc(g.reason || 'Meal recommendation')}" data-priority="${esc(g.priority ?? 50)}" data-source="${esc(g.source || 'recipe')}">Add</button>`}</div>` }).join('')}</div>` : `<div class="empty">Your pantry covers the current meal suggestions. 🎉</div>`}</section>`)
 }
 
 function settingsView() {
@@ -179,14 +183,53 @@ async function deleteItem(item) {
   try { await restRequest('pantry_items', { method: 'DELETE', accessToken: state.session.access_token, query: `?id=eq.${encodeURIComponent(item.id)}` }); await loadData(); render(); showToast('Removed from pantry') } catch (error) { showToast(error.message) }
 }
 
-async function addGrocery(name) {
+async function deleteGrocery(grocery, confirmDelete = true) {
+  if (confirmDelete && !confirm(`Delete ${grocery.item_name} from your grocery list?`)) return
   try {
-    await restRequest('grocery_items', { method: 'POST', accessToken: state.session.access_token, body: { item_name: name, category: 'Other', quantity: 1, unit: 'pcs', reason: 'Meal recommendation', priority: 50, source: 'recipe' } })
+    await restRequest('grocery_items', { method: 'DELETE', accessToken: state.session.access_token, query: `?id=eq.${encodeURIComponent(grocery.id)}` })
+    await loadData(); render(); showToast(`${grocery.item_name} removed from grocery list`)
+  } catch (error) { showToast(error.message) }
+}
+
+async function updateGroceryQuantity(grocery, delta) {
+  const quantity = nextGroceryQuantity(grocery, delta)
+  if (quantity === 0) return deleteGrocery(grocery, false)
+  try {
+    await restRequest('grocery_items', { method: 'PATCH', accessToken: state.session.access_token, query: `?id=eq.${encodeURIComponent(grocery.id)}`, body: { quantity }, headers: { Prefer: 'return=minimal' } })
+    await loadData(); render()
+  } catch (error) { showToast(error.message) }
+}
+
+async function addGrocery(name, unit = 'pcs', reason = 'Meal recommendation', priority = 50, source = 'recipe') {
+  const existing = state.groceries.find((g) => String(g.item_name || '').trim().toLowerCase() === String(name || '').trim().toLowerCase())
+  try {
+    if (existing) {
+      await updateGroceryQuantity(existing, 1)
+      return
+    }
+    await restRequest('grocery_items', { method: 'POST', accessToken: state.session.access_token, body: { item_name: name, category: 'Other', quantity: 1, unit: groceryUnit({ unit }), reason, priority, source } })
     await loadData(); render(); showToast(`${name} added to grocery list`)
   } catch (error) { showToast(error.message) }
 }
 
 document.addEventListener('click', async (event) => {
+  const groceryControl = event.target.closest('[data-grocery-action]')
+  if (groceryControl) {
+    const grocery = state.groceries.find((g) => String(g.id) === String(groceryControl.dataset.id))
+    if (!grocery) return
+    const action = groceryControl.dataset.groceryAction
+    if (action === 'increment') await updateGroceryQuantity(grocery, 1)
+    if (action === 'decrement') await updateGroceryQuantity(grocery, -1)
+    if (action === 'delete') await deleteGrocery(grocery)
+    return
+  }
+
+  const addButton = event.target.closest('[data-grocery-add]')
+  if (addButton) {
+    await addGrocery(addButton.dataset.name, addButton.dataset.unit, addButton.dataset.reason, Number(addButton.dataset.priority), addButton.dataset.source)
+    return
+  }
+
   const screen = event.target.closest('[data-screen]')?.dataset.screen
   if (screen) { state.screen = screen; render(); return }
   const action = event.target.closest('[data-action]')?.dataset.action
@@ -198,7 +241,6 @@ document.addEventListener('click', async (event) => {
   if (action === 'consume' && item) await consume(item)
   if (action === 'delete' && item) await deleteItem(item)
   if (action === 'logout') { clearAuthSession(); state.session = null; authView() }
-  if (event.target.closest('[data-grocery]')) await addGrocery(event.target.closest('[data-grocery]').dataset.name)
 })
 
 boot()
