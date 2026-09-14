@@ -27,7 +27,7 @@ export function buildGrocerySuggestions(pantryItems, recipes, settings = {}) {
       const needed = Number(ingredient.quantity) > 0 ? Number(ingredient.quantity) * scale : null
       if (needed != null && onHand >= needed) continue
       const key = normalize(ingredient.ingredient_name)
-      const entry = counts.get(key) || { frequency: 0, units: new Map(), shortage: 0, unit: ingredient.unit || 'pcs' }
+      const entry = counts.get(key) || { item_name: ingredient.ingredient_name, frequency: 0, units: new Map(), shortage: 0, unit: ingredient.unit || 'pcs' }
       entry.frequency += 1
       const unit = String(ingredient.unit || '').trim()
       if (unit) entry.units.set(unit, (entry.units.get(unit) || 0) + 1)
@@ -35,11 +35,11 @@ export function buildGrocerySuggestions(pantryItems, recipes, settings = {}) {
       counts.set(key, entry)
     }
   }
-  return [...counts.entries()].sort((a, b) => b[1].frequency - a[1].frequency || a[0].localeCompare(b[0])).map(([item_name, entry]) => {
+  return [...counts.entries()].sort((a, b) => b[1].frequency - a[1].frequency || a[0].localeCompare(b[0])).map(([, entry]) => {
     const unit = [...entry.units.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || entry.unit || 'pcs'
     const quantity = entry.shortage > 0 ? Math.round(entry.shortage * 100) / 100 : 1
     return {
-      item_name,
+      item_name: entry.item_name,
       quantity,
       unit,
       reason: `Needed for ${entry.frequency} meal${entry.frequency === 1 ? '' : 's'}`,
