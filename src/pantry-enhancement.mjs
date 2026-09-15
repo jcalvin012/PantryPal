@@ -118,11 +118,20 @@ function decoratePantry() {
       applyPantrySummaryFilter(getPantrySummaryFilter(label).tone)
     })
   }
-  const emptyButton = hero.querySelector('[data-pantry-empty]')
-  if (!emptyButton) {
-    const addButton = hero.querySelector('[data-action="add"]')
-    addButton?.insertAdjacentHTML('afterend', ' <button class="btn danger" type="button" data-pantry-empty>Empty pantry</button>')
-    hero.querySelector('[data-pantry-empty]')?.addEventListener('click', emptyPantry)
+  const addButton = hero.querySelector('[data-action="add"]')
+  if (addButton && !hero.querySelector('[data-pantry-actions]')) {
+    const actions = document.createElement('div')
+    actions.className = 'pantry-actions'
+    actions.dataset.pantryActions = 'true'
+    addButton.parentNode.insertBefore(actions, addButton)
+    actions.appendChild(addButton)
+    const emptyButton = document.createElement('button')
+    emptyButton.className = 'btn danger'
+    emptyButton.type = 'button'
+    emptyButton.dataset.pantryEmpty = 'true'
+    emptyButton.textContent = 'Empty pantry'
+    actions.appendChild(emptyButton)
+    emptyButton.addEventListener('click', emptyPantry)
   }
   grid.querySelectorAll('.pantry-card').forEach((card) => card.classList.add('pantry-card-clean'))
 }
