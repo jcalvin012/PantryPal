@@ -10,6 +10,9 @@ PantryPal is a mobile-first pantry manager backed by Supabase.
 - Consumption logging
 - Deterministic meal recommendations that prioritize urgent food
 - Grocery suggestions from missing meal ingredients
+- Pantry category/search filtering and Quick Snack suggestions
+- Smart grocery grouping, quantities, and shopping-list controls
+- Installable Progressive Web App (PWA) experience for phones
 
 ## Run locally
 
@@ -20,6 +23,15 @@ python3 -m http.server 4173
 ```
 
 Then open `http://localhost:4173`.
+
+## Install on your phone
+
+PantryPal is a Progressive Web App. When served from a secure HTTPS host, it can be installed from the browser:
+
+- **iPhone/iPad:** open PantryPal in Safari → Share → **Add to Home Screen**.
+- **Android:** open PantryPal in Chrome → menu → **Install app** or **Add to Home screen**.
+
+The service worker caches the app shell and static assets. Internet access is still required for Supabase authentication and database operations.
 
 The browser configuration in `src/config.mjs` contains only the Supabase project URL and **publishable** key. Never replace it with a Supabase secret/service-role key.
 
