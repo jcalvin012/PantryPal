@@ -1,5 +1,7 @@
 .pantry-summary { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:-4px 0 16px; }
-.pantry-summary > div { background:#fff; border:1px solid var(--line); border-radius:18px; padding:13px 15px; display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+.pantry-summary > button { background:#fff; border:1px solid var(--line); border-radius:18px; padding:13px 15px; display:flex; align-items:baseline; justify-content:space-between; gap:10px; font:inherit; color:inherit; text-align:left; cursor:pointer; transition:transform .15s ease, box-shadow .15s ease; }
+.pantry-summary > button:hover { transform:translateY(-1px); box-shadow:0 4px 14px rgba(10,20,14,.07); }
+.pantry-summary > button.active { box-shadow:inset 0 0 0 2px currentColor; }
 .pantry-summary strong { font-size:24px; letter-spacing:-.04em; }
 .pantry-summary span { color:var(--muted); font-size:12px; font-weight:700; }
 .pantry-summary .summary-attention { background:#fff9e9; border-color:#f0dfaa; }
@@ -12,6 +14,6 @@
 .pantry-controls { background:#fff; border:1px solid var(--line); border-radius:18px; padding:10px; margin:0 0 16px !important; }
 @media (max-width:760px) {
   .pantry-summary { grid-template-columns:1fr 1fr 1fr; }
-  .pantry-summary > div { display:block; padding:11px 12px; }
+  .pantry-summary > button { display:block; padding:11px 12px; }
   .pantry-summary strong,.pantry-summary span { display:block; }
 }
