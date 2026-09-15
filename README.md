@@ -1,8 +1,8 @@
 # Nouri
 
-Nouri is a mobile-first food management app backed by Supabase.
-
 **Eat smarter. Waste less.**
+
+Nouri is a mobile-first food management app backed by Supabase. It helps you keep track of what you have, use food before it expires, plan meals, and shop with confidence.
 
 ## Current MVP
 
@@ -14,8 +14,9 @@ Nouri is a mobile-first food management app backed by Supabase.
 - Grocery suggestions from missing meal ingredients
 - Food category/search filtering and Quick Snack suggestions
 - Smart grocery grouping, quantities, and shopping-list controls
-- Installable Progressive Web App (PWA) experience for phones
 - Realtime sync across devices using the same account
+- Installable Progressive Web App (PWA) experience for phones
+- Nouri-branded responsive interface
 
 ## Run locally
 
