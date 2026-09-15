@@ -12,8 +12,12 @@
 .pantry-card-clean .qty { font-size:21px; }
 .pantry-card-clean .toolbar { margin-top:2px; }
 .pantry-controls { background:#fff; border:1px solid var(--line); border-radius:18px; padding:10px; margin:0 0 16px !important; }
+.pantry-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.pantry-actions .btn { margin:0; }
 @media (max-width:760px) {
   .pantry-summary { grid-template-columns:1fr 1fr 1fr; }
   .pantry-summary > button { display:block; padding:11px 12px; }
   .pantry-summary strong,.pantry-summary span { display:block; }
+  .pantry-actions { width:100%; }
+  .pantry-actions .btn { flex:1 1 auto; }
 }
