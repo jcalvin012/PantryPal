@@ -1,8 +1,9 @@
-const CACHE_NAME = 'nouri-shell-v1'
+const CACHE_NAME = 'nouri-shell-v2'
 const APP_SHELL = [
   './',
   './index.html',
   './styles.css',
+  './styles/nouri-polish.css',
   './grocery-enhancement.css',
   './pantry-enhancement.css',
   './manifest.webmanifest',
