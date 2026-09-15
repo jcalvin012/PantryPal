@@ -2,24 +2,22 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
-const app = await readFile(new URL('../src/app.mjs', import.meta.url), 'utf8')
-const start = app.indexOf('function homeView()')
-const end = app.indexOf('function recipeCard', start)
-const home = app.slice(start, end)
+const dashboard = await readFile(new URL('../src/dashboard-polish.mjs', import.meta.url), 'utf8')
 
 test('Nouri dashboard has an app-like quick actions area', () => {
-  assert.match(home, /dashboard-quick-actions/)
-  assert.match(home, /data-action="add"/)
-  assert.match(home, /data-screen="meals"/)
-  assert.match(home, /data-screen="grocery"/)
+  assert.match(dashboard, /dashboard-quick-actions/)
+  assert.match(dashboard, /data-action="add"/)
+  assert.match(dashboard, /data-screen="meals"/)
+  assert.match(dashboard, /data-screen="grocery"/)
 })
 
-test('Nouri dashboard gives pantry status a dedicated visual section', () => {
-  assert.match(home, /dashboard-pantry-status/)
-  assert.match(home, /dashboard-stat-card/)
+test('Nouri dashboard gives pantry status dedicated visual classes', () => {
+  assert.match(dashboard, /dashboard-stat-card/)
+  assert.match(dashboard, /dashboard-priority/)
 })
 
-test('Nouri dashboard makes the priority food area visually actionable', () => {
-  assert.match(home, /dashboard-priority/)
-  assert.match(home, /Use These First/)
+test('Nouri dashboard enhances meals and priority sections without replacing app logic', () => {
+  assert.match(dashboard, /heading === 'Use These First'/)
+  assert.match(dashboard, /heading === 'What Can I Make\?'/)
+  assert.match(dashboard, /MutationObserver/)
 })
