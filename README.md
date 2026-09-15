@@ -1,18 +1,21 @@
-# PantryPal
+# Nouri
 
-PantryPal is a mobile-first pantry manager backed by Supabase.
+Nouri is a mobile-first food management app backed by Supabase.
+
+**Eat smarter. Waste less.**
 
 ## Current MVP
 
 - Supabase email/password sign-up and sign-in
-- Pantry add/edit/delete
+- Food inventory add/edit/delete
 - Expiry-aware sorting and status labels
 - Consumption logging
 - Deterministic meal recommendations that prioritize urgent food
 - Grocery suggestions from missing meal ingredients
-- Pantry category/search filtering and Quick Snack suggestions
+- Food category/search filtering and Quick Snack suggestions
 - Smart grocery grouping, quantities, and shopping-list controls
 - Installable Progressive Web App (PWA) experience for phones
+- Realtime sync across devices using the same account
 
 ## Run locally
 
@@ -26,10 +29,10 @@ Then open `http://localhost:4173`.
 
 ## Install on your phone
 
-PantryPal is a Progressive Web App. When served from a secure HTTPS host, it can be installed from the browser:
+Nouri is a Progressive Web App. When served from a secure HTTPS host, it can be installed from the browser:
 
-- **iPhone/iPad:** open PantryPal in Safari → Share → **Add to Home Screen**.
-- **Android:** open PantryPal in Chrome → menu → **Install app** or **Add to Home screen**.
+- **iPhone/iPad:** open Nouri in Safari → Share → **Add to Home Screen**.
+- **Android:** open Nouri in Chrome → menu → **Install app** or **Add to Home screen**.
 
 The service worker caches the app shell and static assets. Internet access is still required for Supabase authentication and database operations.
 
@@ -37,7 +40,7 @@ The browser configuration in `src/config.mjs` contains only the Supabase project
 
 ## Database
 
-The app expects the PantryPal Supabase project schema already created in the project. Row Level Security must remain enabled so each authenticated user can access only their own pantry, consumption, purchase, and grocery rows.
+The app expects the existing Nouri Supabase project schema. Row Level Security must remain enabled so each authenticated user can access only their own food, consumption, purchase, and grocery rows.
 
 ## Development note
 
