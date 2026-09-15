@@ -1,18 +1,12 @@
 import { getAuthSession, restRequest } from './supabase.mjs'
 import { findMatchingPantryItem } from './logic/pantry.mjs'
-import { getPantrySummaryFilter } from './logic/pantry-view.mjs'
-import { getExpiryStatus } from './logic/expiry.mjs'
+import { getPantrySummaryFilter, buildQuickSnackSuggestions } from './logic/pantry-view.mjs'
+
+const esc = (value) => String(value ?? '').replace(/[&<>\"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '\"':'&quot;', "'":'&#39;' }[c]))
+const today = () => new Date().toISOString().slice(0, 10)
 
 function pantryIdentityFromForm(form) {
-  return {
-    name: form.querySelector('[name="name"]')?.value?.trim() || '',
-    quantity: Number(form.querySelector('[name="quantity"]')?.value || 0),
-    unit: form.querySelector('[name="unit"]')?.value || 'pcs',
-    category: form.querySelector('[name="category"]')?.value || 'Other',
-    location: form.querySelector('[name="location"]')?.value || 'Pantry',
-    condition: form.querySelector('[name="condition"]')?.value || 'Fresh',
-    expiry_date: form.querySelector('[name="expiry_date"]')?.value || null,
-  }
+  return { name: form.querySelector('[name="name"]')?.value?.trim() || '', quantity: Number(form.querySelector('[name="quantity"]')?.value || 0), unit: form.querySelector('[name="unit"]')?.value || 'pcs', category: form.querySelector('[name="category"]')?.value || 'Other', location: form.querySelector('[name="location"]')?.value || 'Pantry', condition: form.querySelector('[name="condition"]')?.value || 'Fresh', expiry_date: form.querySelector('[name="expiry_date"]')?.value || null }
 }
 
 async function tryStackNewPantryItem(form) {
@@ -60,8 +54,7 @@ function applyPantrySummaryFilter(tone = null) {
   if (category) category.value = 'All'
   for (const card of getPantryCards()) {
     const badge = card.querySelector('.badge')
-    const matches = !tone || badge?.classList.contains(tone)
-    card.hidden = !matches
+    card.hidden = !tone || badge?.classList.contains(tone) ? false : true
   }
   document.querySelectorAll('[data-pantry-summary]').forEach((node) => node.querySelectorAll('button').forEach((button) => button.classList.toggle('active', button.dataset.pantrySummary === (tone || 'all'))))
 }
@@ -81,6 +74,30 @@ async function emptyPantry() {
   }
 }
 
+async function refreshQuickSnackModal() {
+  const modal = document.querySelector('[data-snack-modal]')
+  if (!modal) return
+  const session = getAuthSession()
+  if (!session?.access_token) return
+  try {
+    const items = await restRequest('pantry_items', { accessToken: session.access_token, query: '?select=*&is_consumed=eq.false' })
+    const snacks = buildQuickSnackSuggestions(items || [], today())
+    const list = modal.querySelector('.item-list')
+    if (!list) return
+    list.innerHTML = snacks.length ? snacks.map((item) => item.expired
+      ? `<div class="item snack-expired"><div><div class="item-name">${esc(item.name)}</div><div class="item-meta">${esc(item.quantity)} ${esc(item.unit)} available</div><div class="snack-warning">⚠️ This item is expired. Consider replacing it instead of using it.</div></div><span class="badge expired">Expired</span></div>`
+      : `<div class="item"><div><div class="item-name">${esc(item.name)}</div><div class="item-meta">${esc(item.quantity)} ${esc(item.unit)} available</div></div><span class="badge safe">Quick snack</span></div>`).join('') : '<div class="empty">No snack items found. Add or edit a pantry item and set its category to Snacks.</div>'
+  } catch (error) {
+    const list = modal.querySelector('.item-list')
+    if (list) list.innerHTML = `<div class="empty">Could not load snacks: ${esc(error.message)}</div>`
+  }
+}
+
+document.addEventListener('click', (event) => {
+  if (!event.target.closest('[data-quick-snack]')) return
+  setTimeout(refreshQuickSnackModal, 50)
+})
+
 function decoratePantry() {
   const hero = [...document.querySelectorAll('.hero')].find((node) => node.querySelector('h1')?.textContent.trim() === 'Pantry')
   const grid = document.querySelector('.pantry-grid')
@@ -97,8 +114,8 @@ function decoratePantry() {
     document.querySelector('[data-pantry-summary]').addEventListener('click', (event) => {
       const button = event.target.closest('[data-pantry-summary]')
       if (!button) return
-      const filter = getPantrySummaryFilter(button.dataset.pantrySummary === 'urgent' ? 'Expiring soon' : button.dataset.pantrySummary === 'expired' ? 'Expired' : 'Items')
-      applyPantrySummaryFilter(filter.tone)
+      const label = button.dataset.pantrySummary === 'urgent' ? 'Expiring soon' : button.dataset.pantrySummary === 'expired' ? 'Expired' : 'Items'
+      applyPantrySummaryFilter(getPantrySummaryFilter(label).tone)
     })
   }
   const emptyButton = hero.querySelector('[data-pantry-empty]')
