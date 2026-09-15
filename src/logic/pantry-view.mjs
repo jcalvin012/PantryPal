@@ -11,6 +11,13 @@ export function filterPantryItems(items, { search = '', category = 'All' } = {})
   })
 }
 
+export function getPantrySummaryFilter(label) {
+  const value = normalize(label)
+  if (value === 'expiring soon') return { search: '', category: 'All', tone: 'urgent' }
+  if (value === 'expired') return { search: '', category: 'All', tone: 'expired' }
+  return { search: '', category: 'All', tone: null }
+}
+
 export function buildQuickSnackSuggestions(items, today = new Date().toISOString().slice(0, 10)) {
   const snacks = items.filter((item) => normalize(item.category) === 'snacks' && Number(item.quantity) > 0)
     .map((item) => {
