@@ -22,10 +22,12 @@ window.fetch = async (...args) => {
   return originalFetch(...args)
 }
 
-function scheduleRefresh() {
+function scheduleRefresh(payload) {
   if (Date.now() - lastLocalWriteAt < LOCAL_WRITE_GRACE_MS) return
   clearTimeout(reloadTimer)
-  reloadTimer = setTimeout(() => window.location.reload(), RELOAD_DEBOUNCE_MS)
+  reloadTimer = setTimeout(() => {
+    window.dispatchEvent(new CustomEvent('pantrypal:remote-change', { detail: payload }))
+  }, RELOAD_DEBOUNCE_MS)
 }
 
 async function subscribe(accessToken, userId) {
@@ -43,8 +45,12 @@ async function subscribe(accessToken, userId) {
   for (const table of REALTIME_TABLES) {
     realtimeChannel = realtimeChannel.on(
       'postgres_changes',
-      { event: '*', schema: 'public', table, filter: `user_id=eq.${userId}` },
-      scheduleRefresh,
+      { event: '*', schema: 'public', table },
+      (payload) => {
+        const rowUserId = payload.new?.user_id || payload.old?.user_id
+        if (rowUserId && String(rowUserId) !== String(userId)) return
+        scheduleRefresh(payload)
+      },
     )
   }
 
