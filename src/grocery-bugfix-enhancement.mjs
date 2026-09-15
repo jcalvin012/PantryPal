@@ -48,8 +48,8 @@ async function submitManualGrocery(event) {
     const unit = data.unit || 'pcs'
     const category = data.category || inferCategory(name, 'Other')
     await mergeManualGroceryItem({ name, quantity, unit, category, reason: data.note?.trim() || 'Manually added', priority: 50, source: 'manual', accessToken: session.access_token })
-    sessionStorage.setItem('pantrypal-return-to-grocery', 'true')
-    location.reload()
+    sessionStorage.removeItem('pantrypal-return-to-grocery')
+    window.dispatchEvent(new CustomEvent('pantrypal:remote-change'))
   } catch (error) {
     if (button) { button.disabled = false; button.textContent = 'Add to grocery list' }
     alert(error.message)
