@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pantrypal-shell-v2'
+const CACHE_NAME = 'nouri-shell-v1'
 const APP_SHELL = [
   './',
   './index.html',
@@ -6,7 +6,7 @@ const APP_SHELL = [
   './grocery-enhancement.css',
   './pantry-enhancement.css',
   './manifest.webmanifest',
-  './icons/pantrypal-icon.svg',
+  './icons/nouri-icon.svg',
 ]
 
 self.addEventListener('install', (event) => {
